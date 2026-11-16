@@ -21,8 +21,8 @@ model User {
   email         String   @unique
   emailVerified Boolean  @default(false) @map("email_verified")
   image         String?
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   sessions             Session[]
   accounts             Account[]
@@ -36,10 +36,10 @@ model User {
 
 model Session {
   id        String   @id
-  expiresAt DateTime @map("expires_at")
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(3)
   token     String   @unique
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
   ipAddress String?  @map("ip_address")
   userAgent String?  @map("user_agent")
   userId    String   @map("user_id")
@@ -58,12 +58,12 @@ model Account {
   accessToken           String?   @map("access_token")
   refreshToken          String?   @map("refresh_token")
   idToken               String?   @map("id_token")
-  accessTokenExpiresAt  DateTime? @map("access_token_expires_at")
-  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at")
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at") @db.Timestamptz(3)
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at") @db.Timestamptz(3)
   scope                 String?
   password              String?
-  createdAt             DateTime  @default(now()) @map("created_at")
-  updatedAt             DateTime  @updatedAt @map("updated_at")
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@index([userId])
   @@map("accounts")
@@ -73,9 +73,9 @@ model Verification {
   id         String   @id
   identifier String
   value      String
-  expiresAt  DateTime @map("expires_at")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  expiresAt  DateTime @map("expires_at") @db.Timestamptz(3)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@index([identifier])
   @@map("verifications")
@@ -134,16 +134,16 @@ model Monitor {
   status               MonitorStatus @default(PENDING)
   consecutiveFailures  Int           @default(0) @map("consecutive_failures")
   consecutiveSuccesses Int           @default(0) @map("consecutive_successes")
-  lastCheckedAt        DateTime?     @map("last_checked_at")
+  lastCheckedAt        DateTime?     @map("last_checked_at") @db.Timestamptz(3)
   lastResponseTimeMs   Int?          @map("last_response_time_ms")
   lastStatusCode       Int?          @map("last_status_code")
   lastError            String?       @map("last_error")
-  lastStatusChangeAt   DateTime?     @map("last_status_change_at")
-  nextCheckAt          DateTime      @default(now()) @map("next_check_at")
-  pausedAt             DateTime?     @map("paused_at")
+  lastStatusChangeAt   DateTime?     @map("last_status_change_at") @db.Timestamptz(3)
+  nextCheckAt          DateTime      @default(now()) @map("next_check_at") @db.Timestamptz(3)
+  pausedAt             DateTime?     @map("paused_at") @db.Timestamptz(3)
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   checks        Check[]
   rollups       CheckRollupHourly[]
@@ -160,7 +160,7 @@ model Check {
   id             BigInt      @id @default(autoincrement())
   monitorId      String      @map("monitor_id")
   monitor        Monitor     @relation(fields: [monitorId], references: [id], onDelete: Cascade)
-  checkedAt      DateTime    @map("checked_at")
+  checkedAt      DateTime    @map("checked_at") @db.Timestamptz(3)
   result         CheckResult
   responseTimeMs Int?        @map("response_time_ms")
   statusCode     Int?        @map("status_code")
@@ -177,7 +177,7 @@ model Check {
 model CheckRollupHourly {
   monitorId         String   @map("monitor_id")
   monitor           Monitor  @relation(fields: [monitorId], references: [id], onDelete: Cascade)
-  hour              DateTime
+  hour              DateTime @db.Timestamptz(3)
   totalChecks       Int      @default(0) @map("total_checks")
   upChecks          Int      @default(0) @map("up_checks")
   downChecks        Int      @default(0) @map("down_checks")
@@ -199,14 +199,14 @@ model Incident {
   monitor         Monitor   @relation(fields: [monitorId], references: [id], onDelete: Cascade)
   userId          String    @map("user_id")
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  startedAt       DateTime  @map("started_at")
-  resolvedAt      DateTime? @map("resolved_at")
+  startedAt       DateTime  @map("started_at") @db.Timestamptz(3)
+  resolvedAt      DateTime? @map("resolved_at") @db.Timestamptz(3)
   durationSeconds Int?      @map("duration_seconds")
   cause           String
   errorType       String?   @map("error_type")
   statusCode      Int?      @map("status_code")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   notifications Notification[]
 
@@ -237,7 +237,7 @@ model NotificationSettings {
   notifyOnRecovery Boolean  @default(true) @map("notify_on_recovery")
   /// Optional override recipient. When null, the account email is used.
   alertEmail       String?  @map("alert_email")
-  updatedAt        DateTime @updatedAt @map("updated_at")
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@map("notification_settings")
 }
@@ -258,9 +258,9 @@ model Notification {
   status     NotificationStatus @default(PENDING)
   attempts   Int                @default(0)
   lastError  String?            @map("last_error")
-  sentAt     DateTime?          @map("sent_at")
-  createdAt  DateTime           @default(now()) @map("created_at")
-  updatedAt  DateTime           @updatedAt @map("updated_at")
+  sentAt     DateTime?          @map("sent_at") @db.Timestamptz(3)
+  createdAt  DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@unique([incidentId, type, channel])
   @@index([status, createdAt])

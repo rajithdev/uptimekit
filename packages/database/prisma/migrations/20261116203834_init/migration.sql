@@ -20,8 +20,8 @@ CREATE TABLE "users" (
     "email" TEXT NOT NULL,
     "email_verified" BOOLEAN NOT NULL DEFAULT false,
     "image" TEXT,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
+    "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(3) NOT NULL,
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 );
@@ -29,10 +29,10 @@ CREATE TABLE "users" (
 -- CreateTable
 CREATE TABLE "sessions" (
     "id" TEXT NOT NULL,
-    "expires_at" TIMESTAMP(3) NOT NULL,
+    "expires_at" TIMESTAMPTZ(3) NOT NULL,
     "token" TEXT NOT NULL,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
+    "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(3) NOT NULL,
     "ip_address" TEXT,
     "user_agent" TEXT,
     "user_id" TEXT NOT NULL,
@@ -49,12 +49,12 @@ CREATE TABLE "accounts" (
     "access_token" TEXT,
     "refresh_token" TEXT,
     "id_token" TEXT,
-    "access_token_expires_at" TIMESTAMP(3),
-    "refresh_token_expires_at" TIMESTAMP(3),
+    "access_token_expires_at" TIMESTAMPTZ(3),
+    "refresh_token_expires_at" TIMESTAMPTZ(3),
     "scope" TEXT,
     "password" TEXT,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
+    "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(3) NOT NULL,
 
     CONSTRAINT "accounts_pkey" PRIMARY KEY ("id")
 );
@@ -64,9 +64,9 @@ CREATE TABLE "verifications" (
     "id" TEXT NOT NULL,
     "identifier" TEXT NOT NULL,
     "value" TEXT NOT NULL,
-    "expires_at" TIMESTAMP(3) NOT NULL,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
+    "expires_at" TIMESTAMPTZ(3) NOT NULL,
+    "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(3) NOT NULL,
 
     CONSTRAINT "verifications_pkey" PRIMARY KEY ("id")
 );
@@ -100,15 +100,15 @@ CREATE TABLE "monitors" (
     "status" "MonitorStatus" NOT NULL DEFAULT 'PENDING',
     "consecutive_failures" INTEGER NOT NULL DEFAULT 0,
     "consecutive_successes" INTEGER NOT NULL DEFAULT 0,
-    "last_checked_at" TIMESTAMP(3),
+    "last_checked_at" TIMESTAMPTZ(3),
     "last_response_time_ms" INTEGER,
     "last_status_code" INTEGER,
     "last_error" TEXT,
-    "last_status_change_at" TIMESTAMP(3),
-    "next_check_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "paused_at" TIMESTAMP(3),
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
+    "last_status_change_at" TIMESTAMPTZ(3),
+    "next_check_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "paused_at" TIMESTAMPTZ(3),
+    "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(3) NOT NULL,
 
     CONSTRAINT "monitors_pkey" PRIMARY KEY ("id")
 );
@@ -117,7 +117,7 @@ CREATE TABLE "monitors" (
 CREATE TABLE "checks" (
     "id" BIGSERIAL NOT NULL,
     "monitor_id" TEXT NOT NULL,
-    "checked_at" TIMESTAMP(3) NOT NULL,
+    "checked_at" TIMESTAMPTZ(3) NOT NULL,
     "result" "CheckResult" NOT NULL,
     "response_time_ms" INTEGER,
     "status_code" INTEGER,
@@ -130,7 +130,7 @@ CREATE TABLE "checks" (
 -- CreateTable
 CREATE TABLE "check_rollups_hourly" (
     "monitor_id" TEXT NOT NULL,
-    "hour" TIMESTAMP(3) NOT NULL,
+    "hour" TIMESTAMPTZ(3) NOT NULL,
     "total_checks" INTEGER NOT NULL DEFAULT 0,
     "up_checks" INTEGER NOT NULL DEFAULT 0,
     "down_checks" INTEGER NOT NULL DEFAULT 0,
@@ -147,14 +147,14 @@ CREATE TABLE "incidents" (
     "id" TEXT NOT NULL,
     "monitor_id" TEXT NOT NULL,
     "user_id" TEXT NOT NULL,
-    "started_at" TIMESTAMP(3) NOT NULL,
-    "resolved_at" TIMESTAMP(3),
+    "started_at" TIMESTAMPTZ(3) NOT NULL,
+    "resolved_at" TIMESTAMPTZ(3),
     "duration_seconds" INTEGER,
     "cause" TEXT NOT NULL,
     "error_type" TEXT,
     "status_code" INTEGER,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
+    "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(3) NOT NULL,
 
     CONSTRAINT "incidents_pkey" PRIMARY KEY ("id")
 );
@@ -166,7 +166,7 @@ CREATE TABLE "notification_settings" (
     "notify_on_down" BOOLEAN NOT NULL DEFAULT true,
     "notify_on_recovery" BOOLEAN NOT NULL DEFAULT true,
     "alert_email" TEXT,
-    "updated_at" TIMESTAMP(3) NOT NULL,
+    "updated_at" TIMESTAMPTZ(3) NOT NULL,
 
     CONSTRAINT "notification_settings_pkey" PRIMARY KEY ("user_id")
 );
@@ -183,9 +183,9 @@ CREATE TABLE "notifications" (
     "status" "NotificationStatus" NOT NULL DEFAULT 'PENDING',
     "attempts" INTEGER NOT NULL DEFAULT 0,
     "last_error" TEXT,
-    "sent_at" TIMESTAMP(3),
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
+    "sent_at" TIMESTAMPTZ(3),
+    "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(3) NOT NULL,
 
     CONSTRAINT "notifications_pkey" PRIMARY KEY ("id")
 );
