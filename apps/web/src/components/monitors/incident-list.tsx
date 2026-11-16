@@ -19,7 +19,16 @@ export function IncidentStateBadge({ open }: { open: boolean }) {
   );
 }
 
-export function IncidentList({ incidents, showMonitor = true }: { incidents: IncidentDto[]; showMonitor?: boolean }) {
+export function IncidentList({
+  incidents,
+  showMonitor = true,
+  hrefTemplate = "/incidents/{id}",
+}: {
+  incidents: IncidentDto[];
+  showMonitor?: boolean;
+  /** Link target; `{id}` and `{monitorId}` are substituted (serializable, unlike a callback). */
+  hrefTemplate?: string;
+}) {
   const now = useNow();
   return (
     <ul className="divide-y">
@@ -28,7 +37,7 @@ export function IncidentList({ incidents, showMonitor = true }: { incidents: Inc
         const ongoingSeconds = (now - new Date(i.startedAt).getTime()) / 1000;
         return (
           <li key={i.id}>
-            <Link href={`/incidents/${i.id}`} className="block space-y-1 rounded-md px-2 py-3 transition-colors hover:bg-muted/40">
+            <Link href={hrefTemplate.replace("{id}", encodeURIComponent(i.id)).replace("{monitorId}", encodeURIComponent(i.monitorId))} className="block space-y-1 rounded-md px-2 py-3 transition-colors hover:bg-muted/40">
               <div className="flex items-center justify-between gap-2">
                 <IncidentStateBadge open={open} />
                 <span className="tabular shrink-0 text-xs text-muted-foreground">{relativeTime(i.startedAt, now)}</span>

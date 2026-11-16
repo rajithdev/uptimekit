@@ -7,6 +7,9 @@ UptimeKit checks your HTTP(S) endpoints from a background worker, waits for conf
 declaring an outage, opens exactly one incident per outage, emails you when it goes down and when it
 recovers, and turns every check into uptime and latency history.
 
+**Live:** [web-production-8c11c7f5.up.railway.app](https://web-production-8c11c7f5.up.railway.app) ·
+**[Live demo (no sign-up)](https://web-production-8c11c7f5.up.railway.app/demo)**
+
 ![Dashboard](docs/screenshots/dashboard.png)
 
 > Screenshots come from a local instance monitoring real public endpoints, about 40 minutes after
@@ -24,6 +27,7 @@ recovers, and turns every check into uptime and latency history.
 - **Analytics**: uptime over 24 hours, 7 days and 30 days, with *coverage*. Missing data is never counted as uptime. Also latency average, p50 and p95, downtime, and a 30-day daily uptime history.
 - **Dashboard**: status totals, a response-time chart, recent incidents and monitor cards with sparklines. Data refreshes every 15 seconds, with dark and light themes.
 - **Security**: SSRF protection with connection pinning that defeats DNS rebinding, ownership checks on every query, rate limiting, CSRF origin checks and Zod validation everywhere.
+- **Public read-only demo**: `/demo` lets anyone explore dashboards, a degraded and a down monitor, incidents and recovery history. It is rendered from clearly labelled, deterministic sample data and never touches the production database.
 - **Built to scale out**: Postgres `SKIP LOCKED` scheduling and BullMQ workers, so you can run as many worker replicas as you need. The web app and the worker deploy independently.
 
 | | |
@@ -169,9 +173,10 @@ pnpm lint && pnpm typecheck
 | Suite | Count | What it covers |
 | --- | --- | --- |
 | `packages/shared` | 152 | SSRF IP/URL policy (loopback, private, metadata, IPv6, encodings), DNS rebinding, redirect revalidation, body cap, timeouts, the state machine, retry rules, uptime and latency math, Zod schemas |
-| `apps/worker` | 25 | incident lifecycle, 25-way concurrent result application (exactly one incident), DB-enforced uniqueness, multi-scheduler claims, stale jobs, real HTTP checks via BullMQ, **real SMTP delivery to Mailpit**, retry and backoff, outbox sweeper, retention, stale sweep |
-| `apps/web` | 47 | auth (hashing, cookies, rate limits), every endpoint's 401 response, CRUD, SSRF on create and update, mass assignment, CSRF, monitor cap, API rate limits, **cross-user isolation**, pagination and filters, stats math, component behaviour |
-| `tests/e2e` | 8 | register, login and logout, create a monitor, see real results, outage → incident → email → recovery → email, isolation, pause and resume, delete |
+| `apps/worker` | 34 | incident lifecycle, 25-way concurrent result application (exactly one incident), DB-enforced uniqueness, multi-scheduler claims, stale jobs, real HTTP checks via BullMQ, **real SMTP delivery to Mailpit**, retry and backoff, outbox sweeper, retention, stale sweep |
+| `apps/web` | 56 | auth (hashing, cookies, rate limits), every endpoint's 401 response, CRUD, SSRF on create and update, mass assignment, CSRF, monitor cap, API rate limits, **cross-user isolation**, pagination and filters, stats math, component behaviour |
+| `packages/database` | 2 | migration manifest matches `prisma/migrations`; no destructive SQL without an explicit marker |
+| `tests/e2e` | 18 | register, login and logout, create a monitor, see real results, outage → incident → email → recovery → email, isolation, pause and resume, delete; public demo (no API calls, no mutation controls, mobile layout); axe-core WCAG 2.1 AA scans |
 
 Local HTTP test servers play the working, failing and slow endpoints, so results are
 deterministic. Mocks are used only to force SMTP failures in the retry test. Real delivery is
@@ -249,6 +254,7 @@ platform steps and a deployment checklist.
 - Email delivery is at-least-once: a crash at exactly the wrong moment can send a duplicate.
 - Past pause periods are not stored, so coverage for previously paused monitors is under-reported.
 - There is no password reset or email verification flow yet.
+- The hosted instance sends alerts through Resend's test sender until a domain is verified, so only the Resend account owner receives them.
 - Monitored endpoints can't take custom request headers or auth (intentional for v1, to avoid storing secrets).
 - If Redis is down, the web app's rate limits fall back to per-process memory.
 

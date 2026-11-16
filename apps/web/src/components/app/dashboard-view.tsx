@@ -67,14 +67,14 @@ export function DashboardView() {
           </div>
 
           <div className="grid gap-6 xl:grid-cols-3">
-            <Card className="shadow-none xl:col-span-2">
+            <Card className="min-w-0 shadow-none xl:col-span-2">
               <CardHeader>
                 <CardTitle className="text-base">Response time</CardTitle>
                 <CardDescription>Average across all monitors, hourly, last 24 hours</CardDescription>
               </CardHeader>
               <CardContent>{s ? <ResponseTimeChart data={s.responseTimeSeries} height={220} /> : <Skeleton className="h-[220px] w-full" />}</CardContent>
             </Card>
-            <Card className="shadow-none">
+            <Card className="min-w-0 shadow-none">
               <CardHeader>
                 <CardTitle className="text-base">Recent incidents</CardTitle>
                 <CardDescription>{s ? `${s.incidentsLast24h} in the last 24 hours` : "\u00a0"}</CardDescription>

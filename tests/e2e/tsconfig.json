@@ -1,5 +1,17 @@
 {
   "extends": "@uptimekit/config/tsconfig.base.json",
-  "compilerOptions": { "types": ["node"] },
-  "include": ["*.ts", "specs", "support"]
+  "compilerOptions": {
+    "types": [
+      "node"
+    ],
+    "lib": [
+      "ES2023",
+      "DOM"
+    ]
+  },
+  "include": [
+    "*.ts",
+    "specs",
+    "support"
+  ]
 }

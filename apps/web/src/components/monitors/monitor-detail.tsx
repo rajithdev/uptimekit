@@ -12,7 +12,7 @@ import { UptimeBars } from "@/components/charts/uptime-bars";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SegmentedControl } from "@/components/app/segmented-control";
 import { formatDuration, formatInterval, formatMs, formatPercent, relativeTime } from "@/lib/format";
 import { useDeleteMonitor, useIncidents, useMonitor, useMonitorStats, usePauseResume } from "@/lib/client/queries";
 import { ChecksTable } from "./checks-table";
@@ -92,13 +92,7 @@ export function MonitorDetail({ id }: { id: string }) {
       )}
 
       <div className="flex items-center justify-between gap-2">
-        <Tabs value={range} onValueChange={(v) => setRange(v as Range)}>
-          <TabsList>
-            <TabsTrigger value="24h">24 hours</TabsTrigger>
-            <TabsTrigger value="7d">7 days</TabsTrigger>
-            <TabsTrigger value="30d">30 days</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <SegmentedControl label="Time range" value={range} onChange={setRange} options={[{ value: "24h", label: "24 hours" }, { value: "7d", label: "7 days" }, { value: "30d", label: "30 days" }]} />
         <span className="text-xs text-muted-foreground">{m?.lastCheckedAt ? `Last checked ${relativeTime(m.lastCheckedAt)}` : "Awaiting first check"}</span>
       </div>
 
@@ -134,7 +128,7 @@ export function MonitorDetail({ id }: { id: string }) {
       </Card>
 
       <div className="grid gap-6 xl:grid-cols-3">
-        <div className="xl:col-span-2">
+        <div className="min-w-0 xl:col-span-2">
           <ChecksTable monitorId={id} />
         </div>
         <div>

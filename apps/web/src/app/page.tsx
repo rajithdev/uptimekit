@@ -1,4 +1,4 @@
-import { ArrowRight, BellRing, Gauge, GitBranch, LineChart, Lock, Radar, ServerCog, ShieldCheck, Timer } from "lucide-react";
+import { ArrowRight, BellRing, Eye, Gauge, GitBranch, LineChart, Lock, Radar, ServerCog, ShieldCheck, Timer } from "lucide-react";
 import Link from "next/link";
 import { Logo } from "@/components/app/logo";
 import { ThemeToggle } from "@/components/app/theme-toggle";
@@ -32,6 +32,9 @@ export default async function LandingPage() {
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4">
           <Logo />
           <nav className="ml-auto flex items-center gap-1">
+            <Link href="/demo" className="px-3 text-sm text-muted-foreground hover:text-foreground">
+              Live demo
+            </Link>
             <a href="https://github.com/rajithdev/uptimekit" className="hidden px-3 text-sm text-muted-foreground hover:text-foreground sm:inline" target="_blank" rel="noreferrer">
               GitHub
             </a>
@@ -67,16 +70,22 @@ export default async function LandingPage() {
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Button asChild size="lg">
+                <Link href="/demo">
+                  <Eye className="size-4" /> View live demo
+                </Link>
+              </Button>
+              <Button asChild size="lg" variant="outline">
                 <Link href={user ? "/dashboard" : "/register"}>
                   {user ? "Open dashboard" : "Start monitoring"} <ArrowRight className="size-4" />
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="outline">
+              <Button asChild size="lg" variant="ghost">
                 <a href="https://github.com/rajithdev/uptimekit" target="_blank" rel="noreferrer">
                   View source
                 </a>
               </Button>
             </div>
+            <p className="mt-3 text-xs text-muted-foreground">No sign-up needed — the demo uses clearly labelled sample data.</p>
           </div>
         </section>
 

@@ -9,7 +9,7 @@ import { Pagination } from "@/components/app/pagination";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SegmentedControl } from "@/components/app/segmented-control";
 import { formatDateTime, formatDuration } from "@/lib/format";
 import { useIncidents } from "@/lib/client/queries";
 import { useNow } from "@/lib/client/use-now";
@@ -37,20 +37,7 @@ export function IncidentsView() {
           ) : null
         }
       />
-      <Tabs
-        value={status}
-        onValueChange={(v) => {
-          setStatus(v);
-          setPage(1);
-        }}
-        className="mb-4"
-      >
-        <TabsList>
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="open">Ongoing</TabsTrigger>
-          <TabsTrigger value="resolved">Resolved</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      <SegmentedControl label="Incident status" value={status} onChange={(v) => { setPage(1); setStatus(v); }} options={[{ value: "all", label: "All" }, { value: "open", label: "Ongoing" }, { value: "resolved", label: "Resolved" }]} className="mb-4" />
       {q.error ? (
         <ErrorState error={q.error} onRetry={() => q.refetch()} />
       ) : q.data && q.data.data.length === 0 ? (

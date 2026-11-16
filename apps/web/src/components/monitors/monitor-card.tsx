@@ -5,10 +5,10 @@ import { formatMs, formatPercent, hostOf, relativeTime } from "@/lib/format";
 import type { MonitorListItemDto } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 
-export function MonitorCard({ monitor }: { monitor: MonitorListItemDto }) {
+export function MonitorCard({ monitor, href, badge }: { monitor: MonitorListItemDto; href?: string; badge?: React.ReactNode }) {
   return (
     <Link
-      href={`/monitors/${monitor.id}`}
+      href={href ?? `/monitors/${monitor.id}`}
       className={cn(
         "group flex flex-col gap-3 rounded-xl border bg-card p-4 transition-colors hover:border-foreground/20",
         monitor.status === "DOWN" && "border-destructive/40",
@@ -19,7 +19,7 @@ export function MonitorCard({ monitor }: { monitor: MonitorListItemDto }) {
           <div className="truncate font-medium">{monitor.name}</div>
           <div className="truncate font-mono text-xs text-muted-foreground">{hostOf(monitor.url)}</div>
         </div>
-        <StatusBadge status={monitor.status} stale={monitor.isStale} />
+        {badge ?? <StatusBadge status={monitor.status} stale={monitor.isStale} />}
       </div>
       <Sparkline values={monitor.sparkline} label={`${monitor.name} response time, last 24 hours`} />
       <div className="tabular grid grid-cols-3 gap-2 text-xs">
