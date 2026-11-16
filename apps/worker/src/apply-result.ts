@@ -39,6 +39,7 @@ interface LockedMonitor {
   retry_interval_seconds: number;
   notifications_enabled: boolean;
   last_checked_at: Date | null;
+  last_status_change_at: Date | null;
 }
 
 /**
@@ -61,7 +62,7 @@ export async function applyCheckResult(
       const rows = await tx.$queryRaw<LockedMonitor[]>`
         SELECT id, user_id, name, status, consecutive_failures, consecutive_successes,
                failure_threshold, recovery_threshold, interval_seconds, retry_interval_seconds,
-               notifications_enabled, last_checked_at
+               notifications_enabled, last_checked_at, last_status_change_at
         FROM monitors WHERE id = ${monitorId} FOR UPDATE`;
       const monitor = rows[0];
       if (!monitor) return { applied: false, reason: "monitor_deleted" } as const;
@@ -115,7 +116,7 @@ export async function applyCheckResult(
 
       if (action === "OPEN") {
         // The outage started at the first failed check of the current failure streak.
-        const startedAt = (await streakStart(tx, monitorId, "DOWN")) ?? checkedAt;
+        const startedAt = (await streakStart(tx, monitorId, "DOWN", monitor.last_status_change_at)) ?? checkedAt;
         const created = await tx.incident.create({
           data: {
             monitorId,
@@ -132,7 +133,7 @@ export async function applyCheckResult(
         if (n) pendingNotificationIds.push(n);
       } else if (action === "RESOLVE" && openIncident) {
         // Service came back at the first success of the current success streak.
-        const recoveredAt = (await streakStart(tx, monitorId, "UP")) ?? checkedAt;
+        const recoveredAt = (await streakStart(tx, monitorId, "UP", monitor.last_status_change_at)) ?? checkedAt;
         const resolvedAt = recoveredAt < openIncident.startedAt ? checkedAt : recoveredAt;
         await tx.incident.update({
           where: { id: openIncident.id },
@@ -197,13 +198,17 @@ async function upsertHourlyRollup(tx: Tx, monitorId: string, checkedAt: Date, ch
       max_response_time_ms = GREATEST(r.max_response_time_ms, EXCLUDED.max_response_time_ms)`;
 }
 
-/** Timestamp of the first check in the trailing streak of `result` checks. */
-async function streakStart(tx: Tx, monitorId: string, result: "UP" | "DOWN"): Promise<Date | null> {
+/**
+ * Timestamp of the first check in the trailing streak of `result` checks, never earlier than the
+ * monitor's last status change (e.g. a resume or URL edit resets history that must not count).
+ */
+async function streakStart(tx: Tx, monitorId: string, result: "UP" | "DOWN", notBefore: Date | null): Promise<Date | null> {
   const opposite = result === "UP" ? "DOWN" : "UP";
   const rows = await tx.$queryRaw<{ started: Date | null }[]>`
     SELECT MIN(checked_at) AS started FROM checks
     WHERE monitor_id = ${monitorId}
       AND result = ${result}::"CheckResult"
+      AND checked_at >= COALESCE(${notBefore}::timestamptz, '-infinity'::timestamptz)
       AND checked_at > COALESCE(
         (SELECT MAX(checked_at) FROM checks WHERE monitor_id = ${monitorId} AND result = ${opposite}::"CheckResult"),
         '-infinity'::timestamptz)`;

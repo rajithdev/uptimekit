@@ -70,6 +70,23 @@ describe("applyCheckResult — incident lifecycle", () => {
     expect(mon.lastStatusChangeAt?.toISOString()).toBe(at(t0, 190).toISOString());
   });
 
+  it("does not date an incident before a resume (failures before a pause don't count)", async () => {
+    const user = await createUser(prisma);
+    const m = await createMonitor(prisma, user.id, { url: "https://example.com", failureThreshold: 2 });
+    await applyCheckResult(prisma, m.id, down, at(t0, 0)); // one failure, then paused
+    const resumedAt = at(t0, 600);
+    // What resume does: back to PENDING with counters reset and a fresh status-change time.
+    await prisma.monitor.update({
+      where: { id: m.id },
+      data: { status: "PENDING", consecutiveFailures: 0, consecutiveSuccesses: 0, lastStatusChangeAt: resumedAt },
+    });
+    await applyCheckResult(prisma, m.id, down, at(t0, 610));
+    const r = await applyCheckResult(prisma, m.id, down, at(t0, 615));
+    expect(r).toMatchObject({ status: "DOWN", incident: { action: "OPENED" } });
+    const incident = await prisma.incident.findFirstOrThrow({ where: { monitorId: m.id } });
+    expect(incident.startedAt.toISOString()).toBe(at(t0, 610).toISOString());
+  });
+
   it("maintains hourly rollups in the same transaction", async () => {
     const user = await createUser(prisma);
     const m = await createMonitor(prisma, user.id, { url: "https://example.com" });
