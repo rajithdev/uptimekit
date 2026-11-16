@@ -38,17 +38,19 @@ then run `pnpm infra:up && pnpm test`.
 | Application builds | PASS | `pnpm build` (fresh clone) |
 | CI configuration valid | PASS | all 7 jobs green on GitHub Actions (run 43963882789); first run failed only because the e2e job did not build the web app — fixed in 882b387 |
 | Documentation complete | PASS | README + docs/ |
-| Deployment verified | NOT VERIFIED | no credentials/authorization; checklist in docs/DEPLOYMENT.md |
+| Deployment verified | PASS | Railway project `uptimekit`: https://web-production-8c11c7f5.up.railway.app — production smoke tests 2026-11-16 (auth, secure cookies, SSRF, real checks, incident open/resolve) |
 
 ## Blockers / needs user input
 
 - Published 2026-11-16: https://github.com/rajithdev/uptimekit (public).
-- **Deployment requires hosting credentials and explicit authorization** — not provided. A
-  deployment checklist is in `docs/DEPLOYMENT.md`.
+- Deployed 2026-11-16 to Railway (see docs/DEPLOYMENT.md#live-deployment-railway).
+- **Email alerts are not production-ready**: worker uses the console provider until SMTP
+  credentials and a verified sending domain are provided.
+- Postgres backup schedule must be enabled in the Railway dashboard.
 
 ## Next actions
 
-1. With authorization + credentials: deploy (docs/DEPLOYMENT.md checklist).
+1. Configure SMTP on the worker; enable Postgres backups.
 2. (P2) Public status pages, webhook/Slack channels, custom request headers with secret storage.
 
 ## Known limitations

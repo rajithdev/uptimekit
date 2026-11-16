@@ -72,8 +72,33 @@ container and set `APP_URL` to the https URL. Replace Mailpit with your SMTP pro
 - [ ] `CHECKER_ALLOW_CIDRS` unset in every production service
 - [ ] Worker egress restricted; IMDSv2 enforced (cloud VMs)
 
-## Current status
+## Live deployment (Railway)
 
-Deployment has **not** been performed: no hosting credentials or authorization were provided.
-All local verification (images build, compose stack healthy, containerised worker recording
-real checks) is documented in `PROGRESS.md`.
+UptimeKit runs on Railway in its own project `uptimekit` (region `ams`):
+
+| Service | Source | Notes |
+| --- | --- | --- |
+| Postgres | Railway template (`postgres-ssl:18`) | 5 GB volume; private host `postgres.railway.internal` |
+| Redis | Railway template (`redis:8.2`) | volume; start command adds `--appendonly yes --maxmemory-policy noeviction` |
+| migrate | `packages/database/Dockerfile` | restart policy `NEVER`; runs `prisma migrate deploy` on each deploy |
+| web | `apps/web/Dockerfile` | public domain, health check `/api/health`, 1 GB / 1 vCPU cap |
+| worker | `apps/worker/Dockerfile` | health check `/healthz` (`PORT=8081`), draining 80 s, 0.5 GB / 1 vCPU cap |
+
+Railway-specific notes:
+
+* The Dockerfile is selected per service with `RAILWAY_DOCKERFILE_PATH`; the build context is the repo root.
+* `DATABASE_URL` / `REDIS_URL` are Railway reference variables over the private network.
+  `?family=0` is appended to `REDIS_URL` so ioredis resolves Railway's IPv6 private DNS.
+* Railway's builder rejects BuildKit cache mounts without a service-specific id, so the
+  Dockerfiles do not use `--mount=type=cache`.
+* `BETTER_AUTH_SECRET` was generated with `openssl rand` and set via `railway variable set --stdin`.
+* All three app services deploy on push to `main` concurrently. Migrations are idempotent, but a
+  release that changes the schema should deploy `migrate` first (or be backward compatible).
+
+Outstanding:
+
+* **Email:** `EMAIL_PROVIDER=console` — alerts are recorded and logged, not emailed. Set
+  `EMAIL_PROVIDER=smtp`, `EMAIL_FROM` and `SMTP_*` on the worker once an SMTP provider and a
+  verified sending domain exist.
+* **Backups:** enable a backup schedule on the Postgres volume in the Railway dashboard
+  (Postgres service → Backups). Not available through the CLI/API used for this deployment.
