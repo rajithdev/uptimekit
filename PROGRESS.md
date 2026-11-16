@@ -40,18 +40,26 @@ then run `pnpm infra:up && pnpm test`.
 | Documentation complete | PASS | README + docs/ |
 | Deployment verified | PASS | Railway project `uptimekit`: https://web-production-8c11c7f5.up.railway.app — production smoke tests 2026-11-16 (auth, secure cookies, SSRF, real checks, incident open/resolve) |
 
+## Launch readiness (2026-11-17)
+
+| Item | Status |
+| --- | --- |
+| Email alerts | Resend HTTPS API (Railway Hobby blocks SMTP). Verified: real DOWN + RECOVERED emails delivered to the Resend owner's inbox (Resend "Delivered", Gmail Inbox). Test sender `onboarding@resend.dev` until a domain is verified. |
+| Postgres backups | NOT enabled — Railway Hobby plan allows 0 volume backups. Needs a plan upgrade or an approved off-platform dump job. |
+| Deploy ordering | Schema gate: web health 503 / worker waits until required migrations are applied; health-check timeout 600 s; destructive-migration CI guard. |
+| Public demo | /demo, read-only, fixture-backed, labelled sample data. |
+| Tests | shared 152, worker 34, web 56, database 2, Playwright 18 (incl. axe). CI 7/7 green. |
+
 ## Blockers / needs user input
 
-- Published 2026-11-16: https://github.com/rajithdev/uptimekit (public).
-- Deployed 2026-11-16 to Railway (see docs/DEPLOYMENT.md#live-deployment-railway).
-- **Email alerts are not production-ready**: worker uses the console provider until SMTP
-  credentials and a verified sending domain are provided.
-- Postgres backup schedule must be enabled in the Railway dashboard.
+- Verify a sending domain in Resend and set worker `EMAIL_FROM` to it, so alerts reach any user.
+- Decide on backups: Railway Pro plan (enables scheduled volume backups) or a dump job to object storage.
 
 ## Next actions
 
-1. Configure SMTP on the worker; enable Postgres backups.
-2. (P2) Public status pages, webhook/Slack channels, custom request headers with secret storage.
+1. Domain verification + `EMAIL_FROM`.
+2. Backups decision.
+3. (P2) Public status pages, webhook/Slack channels.
 
 ## Known limitations
 
