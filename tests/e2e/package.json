@@ -1,0 +1,19 @@
+{
+  "name": "@uptimekit/e2e",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "tsx support/prepare.ts && playwright test",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.1",
+    "@types/node": "22.20.5",
+    "@uptimekit/config": "workspace:*",
+    "@uptimekit/database": "workspace:*",
+    "ioredis": "5.11.1",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3"
+  }
+}

@@ -29,7 +29,10 @@ export function env(): ServerEnv {
     const details = parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
     throw new Error(`Invalid server environment: ${details}`);
   }
-  if (parsed.data.NODE_ENV === "production" && parsed.data.CHECKER_ALLOW_CIDRS) {
+  // The SSRF escape hatch is refused in production builds. The only exception is the
+  // Playwright suite, which runs a production build against a 127.0.0.1 target server and
+  // opts in explicitly with UPTIMEKIT_E2E=1.
+  if (parsed.data.NODE_ENV === "production" && parsed.data.CHECKER_ALLOW_CIDRS && process.env.UPTIMEKIT_E2E !== "1") {
     throw new Error("CHECKER_ALLOW_CIDRS must not be set in production");
   }
   cached = {

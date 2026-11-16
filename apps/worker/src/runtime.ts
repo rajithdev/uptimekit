@@ -99,7 +99,7 @@ export function createWorkerRuntime(config: WorkerConfig, logger: Logger, overri
     async start() {
       if (config.allowCidrs.length > 0) {
         logger.warn({ allowCidrs: config.allowCidrs }, "CHECKER_ALLOW_CIDRS is set: SSRF protection is relaxed for these ranges. Never use this in production.");
-        if (config.NODE_ENV === "production") {
+        if (config.NODE_ENV === "production" && process.env.UPTIMEKIT_E2E !== "1") {
           throw new Error("CHECKER_ALLOW_CIDRS must not be set when NODE_ENV=production");
         }
       }
