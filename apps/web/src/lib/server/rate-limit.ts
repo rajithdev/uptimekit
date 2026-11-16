@@ -82,6 +82,16 @@ export async function rateLimit(rule: RateLimitRule, subject: string): Promise<R
 export async function pingRedis(): Promise<boolean | null> {
   const client = redis();
   if (!client) return null;
+  // On a cold process the client may still be connecting (offline queue is disabled).
+  if (client.status !== "ready") {
+    await new Promise<void>((resolve) => {
+      const t = setTimeout(resolve, 1500);
+      client.once("ready", () => {
+        clearTimeout(t);
+        resolve();
+      });
+    });
+  }
   try {
     return (await client.ping()) === "PONG";
   } catch {

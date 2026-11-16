@@ -1,0 +1,21 @@
+**/node_modules
+**/.next
+**/dist
+**/coverage
+**/.turbo
+**/*.tsbuildinfo
+**/playwright-report
+**/test-results
+**/blob-report
+**/.env
+**/.env.*
+!**/.env.example
+.git
+.github
+.vscode
+.idea
+.DS_Store
+**/*.log
+docs
+# Prisma client is generated inside the image
+packages/database/src/generated

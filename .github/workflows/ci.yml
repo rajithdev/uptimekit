@@ -1,0 +1,170 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22"
+  # Non-secret values for test/build only.
+  BETTER_AUTH_SECRET: ci-only-secret-not-used-in-production-000000
+  APP_URL: http://localhost:3000
+  # prisma.config.ts requires DATABASE_URL even for `prisma generate`; no DB is contacted.
+  DATABASE_URL: postgresql://uptimekit:uptimekit@localhost:5442/uptimekit
+
+jobs:
+  quality:
+    name: Lint, typecheck, unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:generate
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test:unit
+
+  integration:
+    name: Integration tests (Postgres, Redis, Mailpit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: uptimekit
+          POSTGRES_PASSWORD: uptimekit
+          POSTGRES_DB: uptimekit
+        ports: ["5442:5432"]
+        options: >-
+          --health-cmd "pg_isready -U uptimekit -d uptimekit"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+      redis:
+        image: redis:7.4-alpine
+        ports: ["6380:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+      mailpit:
+        image: axllent/mailpit:v1.27
+        ports: ["1026:1025", "8026:8025"]
+    env:
+      TEST_DATABASE_URL: postgresql://uptimekit:uptimekit@localhost:5442/uptimekit_test
+      TEST_WEB_DATABASE_URL: postgresql://uptimekit:uptimekit@localhost:5442/uptimekit_test_web
+      TEST_REDIS_URL: redis://localhost:6380/1
+      TEST_WEB_REDIS_URL: redis://localhost:6380/2
+      MAILPIT_API_URL: http://localhost:8026
+      MAILPIT_SMTP_PORT: "1026"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:generate
+      - name: Wait for Mailpit
+        run: |
+          for _ in $(seq 1 30); do curl -fsS http://localhost:8026/readyz && exit 0; sleep 2; done
+          exit 1
+      - run: pnpm test:integration
+
+  build:
+    name: Production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+  docker:
+    name: Docker images (${{ matrix.image }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: web
+            dockerfile: apps/web/Dockerfile
+          - image: worker
+            dockerfile: apps/worker/Dockerfile
+          - image: migrate
+            dockerfile: packages/database/Dockerfile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: false
+          tags: uptimekit-${{ matrix.image }}:ci
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+
+  e2e:
+    name: End-to-end (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: [quality]
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: uptimekit
+          POSTGRES_PASSWORD: uptimekit
+          POSTGRES_DB: uptimekit
+        ports: ["5442:5432"]
+        options: >-
+          --health-cmd "pg_isready -U uptimekit -d uptimekit"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+      redis:
+        image: redis:7.4-alpine
+        ports: ["6380:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+      mailpit:
+        image: axllent/mailpit:v1.27
+        ports: ["1026:1025", "8026:8025"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:generate
+      - run: pnpm --filter @uptimekit/e2e exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            tests/e2e/playwright-report
+            tests/e2e/test-results
+          retention-days: 7

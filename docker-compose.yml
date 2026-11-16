@@ -62,6 +62,7 @@ services:
 
   web:
     profiles: ["app"]
+    restart: unless-stopped
     build:
       context: .
       dockerfile: apps/web/Dockerfile
@@ -87,6 +88,9 @@ services:
 
   worker:
     profiles: ["app"]
+    restart: unless-stopped
+    # Matches the worker's internal graceful-shutdown deadline (in-flight checks finish first).
+    stop_grace_period: 80s
     build:
       context: .
       dockerfile: apps/worker/Dockerfile
