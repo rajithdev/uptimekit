@@ -26,3 +26,4 @@ blob-report/
 *.log
 .vscode/
 .idea/
+.claude/

@@ -1,5 +1,11 @@
+import { existsSync } from "node:fs";
 import path from "node:path";
 import type { NextConfig } from "next";
+
+// Local development convenience: share the monorepo-root .env with the worker.
+// (Absent in Docker/CI, where configuration comes from real environment variables.)
+const rootEnv = path.join(import.meta.dirname, "../../.env");
+if (existsSync(rootEnv) && process.env.NODE_ENV !== "production") process.loadEnvFile(rootEnv);
 
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
