@@ -19,7 +19,9 @@ const schema = z.object({
   MAX_QUEUED_CHECKS: z.coerce.number().int().min(10).default(5000),
   CHECK_RETENTION_DAYS: z.coerce.number().int().min(1).max(3650).default(30),
 
-  EMAIL_PROVIDER: z.enum(["smtp", "console"]).default("console"),
+  EMAIL_PROVIDER: z.enum(["smtp", "resend", "console"]).default("console"),
+  RESEND_API_KEY: z.string().optional(),
+  RESEND_API_URL: z.url().default("https://api.resend.com"),
   EMAIL_FROM: z.string().default("UptimeKit <alerts@uptimekit.local>"),
   SMTP_HOST: z.string().default("localhost"),
   SMTP_PORT: z.coerce.number().int().default(1026),
@@ -40,6 +42,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): WorkerConfig {
   if (!parsed.success) {
     const details = parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
     throw new Error(`Invalid worker configuration: ${details}`);
+  }
+  if (parsed.data.EMAIL_PROVIDER === "resend" && !parsed.data.RESEND_API_KEY) {
+    throw new Error("Invalid worker configuration: RESEND_API_KEY is required when EMAIL_PROVIDER=resend");
   }
   const allowCidrs = parsed.data.CHECKER_ALLOW_CIDRS.split(",")
     .map((s) => s.trim())

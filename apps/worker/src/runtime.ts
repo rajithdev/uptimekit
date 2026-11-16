@@ -8,7 +8,7 @@ import { startHealthServer, type HealthState } from "./health";
 import type { Logger } from "./logger";
 import { markStaleMonitorsUnknown, pruneOldChecks, requeueStuckNotifications } from "./maintenance";
 import { deliverNotification } from "./notifications/deliver";
-import { ConsoleEmailProvider, SmtpEmailProvider, type EmailProvider } from "./notifications/provider";
+import { ConsoleEmailProvider, ResendEmailProvider, SmtpEmailProvider, type EmailProvider } from "./notifications/provider";
 import { CHECK_QUEUE, NOTIFICATION_QUEUE, createQueues, createRedis, type CheckJobData, type NotificationJobData, type Queues } from "./queues";
 import { runSchedulerTick } from "./scheduler";
 
@@ -36,6 +36,9 @@ export function createEmailProvider(config: WorkerConfig, logger: Logger): Email
       user: config.SMTP_USER,
       password: config.SMTP_PASSWORD,
     });
+  }
+  if (config.EMAIL_PROVIDER === "resend") {
+    return new ResendEmailProvider(config.EMAIL_FROM, config.RESEND_API_KEY ?? "", config.RESEND_API_URL);
   }
   return new ConsoleEmailProvider(logger);
 }

@@ -22,7 +22,8 @@ Managed services required: **PostgreSQL 14+** (uses `date_bin`), **Redis 6+** (w
 | `BETTER_AUTH_URL` | ✓ | | no | defaults to `APP_URL` |
 | `MONITOR_MIN_INTERVAL_SECONDS` | ✓ | | no | default 30 |
 | `MAX_MONITORS_PER_USER` | ✓ | | no | default 50 |
-| `EMAIL_PROVIDER` | | ✓ | yes | `smtp` (or `console` to log only) |
+| `EMAIL_PROVIDER` | | ✓ | yes | `smtp`, `resend` (HTTPS API) or `console` (log only) |
+| `RESEND_API_KEY` | | ✓ | for resend | sending-only Resend API key (secret) |
 | `EMAIL_FROM` | | ✓ | yes | e.g. `UptimeKit <alerts@yourdomain.com>` |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_SECURE` / `SMTP_USER` / `SMTP_PASSWORD` | | ✓ | for smtp | provider credentials (secret) |
 | `WORKER_CONCURRENCY` | | ✓ | no | concurrent checks per replica (20) |

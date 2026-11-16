@@ -122,8 +122,9 @@ Transactional outbox → BullMQ → email provider.
   and enqueue).
 * Delivery is **at-least-once**: a crash after the SMTP server accepted the message but before
   `SENT` is committed can cause one duplicate email.
-* Providers: `smtp` (Mailpit in development; SES/Postmark/Resend/… SMTP in production) and
-  `console` (logs subject + recipient only).
+* Providers: `smtp` (Mailpit in development; SES/Postmark/Resend/… SMTP in production),
+  `resend` (Resend HTTPS API — for hosts that block outbound SMTP, such as Railway's Hobby
+  plan) and `console` (logs subject + recipient only).
 
 ## 7. Analytics definitions
 
