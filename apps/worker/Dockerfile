@@ -10,9 +10,9 @@ FROM base AS build
 COPY . .
 # `prisma generate` makes no database connection; a placeholder DATABASE_URL is passed
 # defensively for this build step only and is not baked into the image.
-RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
-  pnpm config set store-dir /pnpm/store \
-  && pnpm install --frozen-lockfile \
+# No BuildKit cache mount: Railway's builder requires service-specific cache ids,
+# and the image must build identically on Railway, CI and locally.
+RUN pnpm install --frozen-lockfile \
   && DATABASE_URL=postgresql://build:build@localhost:5432/build pnpm --filter @uptimekit/database generate \
   && pnpm --filter @uptimekit/worker build \
   && pnpm deploy --filter @uptimekit/worker --prod --legacy /out \
