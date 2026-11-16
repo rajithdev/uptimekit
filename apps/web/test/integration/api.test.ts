@@ -395,6 +395,6 @@ describe("health", () => {
   it("reports database connectivity", async () => {
     const res = await health.GET();
     expect(res.status).toBe(200);
-    expect(await res.json()).toMatchObject({ status: "ok", dependencies: { database: true } });
+    expect(await res.json()).toMatchObject({ status: "ok", dependencies: { database: true, schema: true } });
   });
 });

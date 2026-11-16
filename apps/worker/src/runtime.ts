@@ -1,4 +1,4 @@
-import { createPrismaClient, type PrismaClient } from "@uptimekit/database";
+import { checkSchema, createPrismaClient, type PrismaClient } from "@uptimekit/database";
 import { Worker } from "bullmq";
 import type { Redis } from "ioredis";
 import type http from "node:http";
@@ -105,6 +105,20 @@ export function createWorkerRuntime(config: WorkerConfig, logger: Logger, overri
         if (config.NODE_ENV === "production" && process.env.UPTIMEKIT_E2E !== "1") {
           throw new Error("CHECKER_ALLOW_CIDRS must not be set when NODE_ENV=production");
         }
+      }
+
+      // Deployment safety gate: never process jobs against a schema older than this release
+      // expects. Until migrations land, health stays down and the previous release keeps running.
+      const deadline = Date.now() + config.SCHEMA_WAIT_TIMEOUT_MS;
+      for (;;) {
+        const schema = await checkSchema(prisma);
+        if (schema.ready) break;
+        if (stopping) return;
+        if (Date.now() >= deadline) {
+          throw new Error(`Database schema not ready after ${config.SCHEMA_WAIT_TIMEOUT_MS}ms; missing migrations: ${schema.missing.join(", ")}`);
+        }
+        logger.warn({ missing: schema.missing }, "waiting for database migrations before starting");
+        await new Promise((r) => setTimeout(r, 5_000));
       }
 
       const checkConn = createRedis(config.REDIS_URL);

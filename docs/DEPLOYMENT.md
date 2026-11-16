@@ -93,13 +93,40 @@ Railway-specific notes:
 * Railway's builder rejects BuildKit cache mounts without a service-specific id, so the
   Dockerfiles do not use `--mount=type=cache`.
 * `BETTER_AUTH_SECRET` was generated with `openssl rand` and set via `railway variable set --stdin`.
-* All three app services deploy on push to `main` concurrently. Migrations are idempotent, but a
-  release that changes the schema should deploy `migrate` first (or be backward compatible).
+* All three app services deploy on push to `main` concurrently; ordering is enforced by the
+  schema gate described below.
+
+Email: Railway's Hobby plan blocks outbound SMTP, so the worker uses the Resend **HTTPS API**
+(`EMAIL_PROVIDER=resend`, `RESEND_API_KEY` = a Railway reference to the stored sending-only key).
+Until a domain is verified in Resend, the sender is `onboarding@resend.dev`, which Resend only
+delivers to the Resend account owner's address. Verify a domain in Resend and change
+`EMAIL_FROM` to `UptimeKit <alerts@your-domain>` to alert any user.
 
 Outstanding:
-
-* **Email:** `EMAIL_PROVIDER=console` — alerts are recorded and logged, not emailed. Set
-  `EMAIL_PROVIDER=smtp`, `EMAIL_FROM` and `SMTP_*` on the worker once an SMTP provider and a
-  verified sending domain exist.
 * **Backups:** enable a backup schedule on the Postgres volume in the Railway dashboard
   (Postgres service → Backups). Not available through the CLI/API used for this deployment.
+
+## Release procedure and migration safety
+
+Railway cannot make one service wait for another, so ordering is enforced by the application:
+
+1. Every release carries `REQUIRED_MIGRATIONS` (`packages/database/src/migrations-manifest.ts`,
+   checked against `prisma/migrations` by a unit test).
+2. On push to `main`, `migrate`, `web` and `worker` build and deploy in parallel.
+3. `migrate` runs `prisma migrate deploy` once (restart policy `NEVER`).
+4. A new `web` deployment reports `503` on `/api/health` and a new `worker` does not start (and
+   serves no `/healthz`) until the database has applied every required migration. Railway keeps
+   the **previous** deployment serving traffic until the new one passes its health check
+   (timeout 600 s).
+5. If the migration fails, the new web/worker deployments never become healthy, the deploy is
+   marked failed, and the previous release keeps running unchanged. Nothing incompatible goes live.
+
+Writing migrations (expand → contract):
+
+* Every migration must be backward compatible with the release that is still running: add
+  nullable columns, new tables, new indexes. A unit test rejects `DROP`, `RENAME`, column type
+  changes, `SET NOT NULL`, `TRUNCATE` and `DELETE` unless the file contains
+  `-- uptimekit:allow-destructive` (only for a later "contract" release, once no running code
+  uses the old schema).
+* Backfills run in a separate, idempotent step before tightening constraints.
+* Add the new folder name to `REQUIRED_MIGRATIONS` in the same commit as the migration.

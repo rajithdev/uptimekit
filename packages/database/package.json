@@ -13,7 +13,9 @@
     "migrate:deploy": "prisma migrate deploy",
     "migrate:reset": "prisma migrate reset --force",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:unit": "vitest run"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.1",
@@ -28,6 +30,7 @@
     "eslint": "9.39.4",
     "prisma": "7.10.1",
     "tsx": "4.23.15",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "vitest": "4.1.12"
   }
 }

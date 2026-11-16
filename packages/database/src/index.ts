@@ -3,6 +3,8 @@ import { PrismaClient } from "./generated/prisma/client";
 
 export * from "./generated/prisma/client";
 export { PrismaClient };
+export { checkSchema, type SchemaStatus } from "./schema-gate";
+export { REQUIRED_MIGRATIONS } from "./migrations-manifest";
 
 export interface CreatePrismaClientOptions {
   connectionString?: string;

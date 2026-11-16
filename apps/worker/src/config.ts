@@ -17,6 +17,8 @@ const schema = z.object({
   SCHEDULER_BATCH_SIZE: z.coerce.number().int().min(1).max(5000).default(500),
   /** Stop claiming new checks when this many are already waiting (backpressure). */
   MAX_QUEUED_CHECKS: z.coerce.number().int().min(10).default(5000),
+  /** How long a new release waits for its migrations before giving up (deploy then fails). */
+  SCHEMA_WAIT_TIMEOUT_MS: z.coerce.number().int().min(0).max(3_600_000).default(600_000),
   CHECK_RETENTION_DAYS: z.coerce.number().int().min(1).max(3650).default(30),
 
   EMAIL_PROVIDER: z.enum(["smtp", "resend", "console"]).default("console"),
