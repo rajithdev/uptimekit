@@ -12,7 +12,6 @@
     "migrate:dev": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
     "migrate:reset": "prisma migrate reset --force",
-    "seed:demo": "tsx prisma/seed-demo.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint ."
   },

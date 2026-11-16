@@ -22,7 +22,6 @@
     "db:generate": "pnpm --filter @uptimekit/database generate",
     "db:migrate": "pnpm --filter @uptimekit/database migrate:dev",
     "db:deploy": "pnpm --filter @uptimekit/database migrate:deploy",
-    "db:seed:demo": "pnpm --filter @uptimekit/database seed:demo",
     "infra:up": "docker compose up -d --wait postgres redis mailpit",
     "infra:down": "docker compose down"
   }
