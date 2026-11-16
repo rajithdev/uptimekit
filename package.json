@@ -1,0 +1,29 @@
+{
+  "name": "uptimekit",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Open-source website and API uptime monitoring platform with real-time incident detection, response analytics, background workers and email alerts.",
+  "license": "MIT",
+  "packageManager": "pnpm@10.9.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @uptimekit/web --filter @uptimekit/worker dev",
+    "dev:web": "pnpm --filter @uptimekit/web dev",
+    "dev:worker": "pnpm --filter @uptimekit/worker dev",
+    "build": "pnpm --filter @uptimekit/database generate && pnpm -r --filter=!uptimekit build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r --filter=!@uptimekit/e2e test",
+    "test:unit": "pnpm -r test:unit",
+    "test:integration": "pnpm -r test:integration",
+    "test:e2e": "pnpm --filter @uptimekit/e2e test",
+    "db:generate": "pnpm --filter @uptimekit/database generate",
+    "db:migrate": "pnpm --filter @uptimekit/database migrate:dev",
+    "db:deploy": "pnpm --filter @uptimekit/database migrate:deploy",
+    "db:seed:demo": "pnpm --filter @uptimekit/database seed:demo",
+    "infra:up": "docker compose up -d --wait postgres redis mailpit",
+    "infra:down": "docker compose down"
+  }
+}

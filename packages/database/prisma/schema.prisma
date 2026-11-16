@@ -1,0 +1,269 @@
+// UptimeKit database schema.
+//
+// Auth tables (User, Session, Account, Verification, RateLimit) follow the Better Auth
+// core schema. Everything else is UptimeKit domain data. All tables use snake_case names.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ───────────────────────────── Auth (Better Auth) ─────────────────────────────
+
+model User {
+  id            String   @id
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false) @map("email_verified")
+  image         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  sessions             Session[]
+  accounts             Account[]
+  monitors             Monitor[]
+  incidents            Incident[]
+  notifications        Notification[]
+  notificationSettings NotificationSettings?
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime @map("expires_at")
+  token     String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String    @map("account_id")
+  providerId            String    @map("provider_id")
+  userId                String    @map("user_id")
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?   @map("access_token")
+  refreshToken          String?   @map("refresh_token")
+  idToken               String?   @map("id_token")
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at")
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at")
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([identifier])
+  @@map("verifications")
+}
+
+model RateLimit {
+  id          String @id
+  key         String @unique
+  count       Int
+  lastRequest BigInt @map("last_request")
+
+  @@map("rate_limits")
+}
+
+// ───────────────────────────── Monitoring ─────────────────────────────
+
+enum MonitorStatus {
+  PENDING
+  UP
+  DOWN
+  PAUSED
+  UNKNOWN
+}
+
+enum HttpMethod {
+  GET
+  HEAD
+}
+
+enum CheckResult {
+  UP
+  DOWN
+}
+
+model Monitor {
+  id     String @id @default(cuid())
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Configuration
+  name                 String
+  url                  String
+  method               HttpMethod @default(GET)
+  intervalSeconds      Int        @default(60) @map("interval_seconds")
+  timeoutMs            Int        @default(10000) @map("timeout_ms")
+  /// Comma-separated codes and ranges, e.g. "200-299" or "200,204,301-302".
+  expectedStatusCodes  String     @default("200-299") @map("expected_status_codes")
+  keyword              String?
+  followRedirects      Boolean    @default(true) @map("follow_redirects")
+  failureThreshold     Int        @default(2) @map("failure_threshold")
+  recoveryThreshold    Int        @default(2) @map("recovery_threshold")
+  retryIntervalSeconds Int        @default(20) @map("retry_interval_seconds")
+  notificationsEnabled Boolean    @default(true) @map("notifications_enabled")
+
+  // Runtime state (owned by the worker, except pause/resume)
+  status               MonitorStatus @default(PENDING)
+  consecutiveFailures  Int           @default(0) @map("consecutive_failures")
+  consecutiveSuccesses Int           @default(0) @map("consecutive_successes")
+  lastCheckedAt        DateTime?     @map("last_checked_at")
+  lastResponseTimeMs   Int?          @map("last_response_time_ms")
+  lastStatusCode       Int?          @map("last_status_code")
+  lastError            String?       @map("last_error")
+  lastStatusChangeAt   DateTime?     @map("last_status_change_at")
+  nextCheckAt          DateTime      @default(now()) @map("next_check_at")
+  pausedAt             DateTime?     @map("paused_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  checks        Check[]
+  rollups       CheckRollupHourly[]
+  incidents     Incident[]
+  notifications Notification[]
+
+  @@index([userId, createdAt])
+  @@index([status, nextCheckAt])
+  @@map("monitors")
+}
+
+/// One executed HTTP check. High volume: BigInt identity key, pruned by retention policy.
+model Check {
+  id             BigInt      @id @default(autoincrement())
+  monitorId      String      @map("monitor_id")
+  monitor        Monitor     @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  checkedAt      DateTime    @map("checked_at")
+  result         CheckResult
+  responseTimeMs Int?        @map("response_time_ms")
+  statusCode     Int?        @map("status_code")
+  /// Machine-readable failure category (TIMEOUT, DNS, CONNECTION, TLS, STATUS, KEYWORD, BLOCKED, ...).
+  errorType      String?     @map("error_type")
+  errorMessage   String?     @map("error_message")
+
+  @@index([monitorId, checkedAt(sort: Desc)])
+  @@index([checkedAt])
+  @@map("checks")
+}
+
+/// Hourly pre-aggregated check statistics, maintained in the same transaction as each check.
+model CheckRollupHourly {
+  monitorId         String   @map("monitor_id")
+  monitor           Monitor  @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  hour              DateTime
+  totalChecks       Int      @default(0) @map("total_checks")
+  upChecks          Int      @default(0) @map("up_checks")
+  downChecks        Int      @default(0) @map("down_checks")
+  responseTimeSumMs BigInt   @default(0) @map("response_time_sum_ms")
+  responseTimeCount Int      @default(0) @map("response_time_count")
+  minResponseTimeMs Int?     @map("min_response_time_ms")
+  maxResponseTimeMs Int?     @map("max_response_time_ms")
+
+  @@id([monitorId, hour])
+  @@index([hour])
+  @@map("check_rollups_hourly")
+}
+
+/// A confirmed outage. At most one open incident per monitor is enforced by a partial
+/// unique index (see migration `incident_open_unique`).
+model Incident {
+  id              String    @id @default(cuid())
+  monitorId       String    @map("monitor_id")
+  monitor         Monitor   @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  userId          String    @map("user_id")
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startedAt       DateTime  @map("started_at")
+  resolvedAt      DateTime? @map("resolved_at")
+  durationSeconds Int?      @map("duration_seconds")
+  cause           String
+  errorType       String?   @map("error_type")
+  statusCode      Int?      @map("status_code")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  notifications Notification[]
+
+  @@index([userId, startedAt(sort: Desc)])
+  @@index([monitorId, startedAt(sort: Desc)])
+  @@map("incidents")
+}
+
+// ───────────────────────────── Notifications ─────────────────────────────
+
+enum NotificationType {
+  INCIDENT_OPENED
+  INCIDENT_RESOLVED
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  SKIPPED
+}
+
+model NotificationSettings {
+  userId           String   @id @map("user_id")
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailEnabled     Boolean  @default(true) @map("email_enabled")
+  notifyOnDown     Boolean  @default(true) @map("notify_on_down")
+  notifyOnRecovery Boolean  @default(true) @map("notify_on_recovery")
+  /// Optional override recipient. When null, the account email is used.
+  alertEmail       String?  @map("alert_email")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("notification_settings")
+}
+
+/// Outbox row for every alert. Unique per (incident, type, channel) so retries can never
+/// produce duplicate notifications.
+model Notification {
+  id         String             @id @default(cuid())
+  userId     String             @map("user_id")
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  monitorId  String             @map("monitor_id")
+  monitor    Monitor            @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  incidentId String             @map("incident_id")
+  incident   Incident           @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  type       NotificationType
+  channel    String             @default("email")
+  recipient  String
+  status     NotificationStatus @default(PENDING)
+  attempts   Int                @default(0)
+  lastError  String?            @map("last_error")
+  sentAt     DateTime?          @map("sent_at")
+  createdAt  DateTime           @default(now()) @map("created_at")
+  updatedAt  DateTime           @updatedAt @map("updated_at")
+
+  @@unique([incidentId, type, channel])
+  @@index([status, createdAt])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("notifications")
+}

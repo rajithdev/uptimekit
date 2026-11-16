@@ -1,0 +1,27 @@
+{
+  "name": "@uptimekit/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/server/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:unit": "vitest run"
+  },
+  "dependencies": {
+    "ipaddr.js": "2.5.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "@uptimekit/config": "workspace:*",
+    "eslint": "9.39.4",
+    "typescript": "5.9.3",
+    "vitest": "4.1.12"
+  }
+}
