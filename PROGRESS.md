@@ -36,20 +36,20 @@ then run `pnpm infra:up && pnpm test`.
 | Docker services run together | PASS | `docker compose --profile app up --wait` all healthy |
 | Automated tests pass | PASS | 152 + 25 + 47 Vitest, 8 Playwright |
 | Application builds | PASS | `pnpm build` (fresh clone) |
-| CI configuration valid | PASS (static) | actionlint exit 0; not yet executed on GitHub (repo not pushed) |
+| CI configuration valid | PASS | all 7 jobs green on GitHub Actions (run 43963882789); first run failed only because the e2e job did not build the web app — fixed in 882b387 |
 | Documentation complete | PASS | README + docs/ |
 | Deployment verified | NOT VERIFIED | no credentials/authorization; checklist in docs/DEPLOYMENT.md |
 
 ## Blockers / needs user input
 
-- **Deployment and `git push` require explicit authorization** — not requested. A deployment
-  checklist is in `docs/DEPLOYMENT.md`.
+- Published 2026-11-16: https://github.com/rajithdev/uptimekit (public).
+- **Deployment requires hosting credentials and explicit authorization** — not provided. A
+  deployment checklist is in `docs/DEPLOYMENT.md`.
 
 ## Next actions
 
-1. With authorization: create the GitHub repo `uptimekit`, push, confirm CI runs green.
-2. With authorization + credentials: deploy (docs/DEPLOYMENT.md checklist).
-3. (P2) Public status pages, webhook/Slack channels, custom request headers with secret storage.
+1. With authorization + credentials: deploy (docs/DEPLOYMENT.md checklist).
+2. (P2) Public status pages, webhook/Slack channels, custom request headers with secret storage.
 
 ## Known limitations
 
