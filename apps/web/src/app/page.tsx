@@ -110,7 +110,7 @@ export default async function LandingPage() {
                   className="absolute inset-0"
                 >
                   <VideoLockScreen />
-                  <div className="absolute top-[63%] left-[47%]">
+                  <div className="absolute top-[71%] left-[47%]">
                     <MonitorCard />
                   </div>
                 </div>

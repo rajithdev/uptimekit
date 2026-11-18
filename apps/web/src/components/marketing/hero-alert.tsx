@@ -103,7 +103,7 @@ export function MonitorCard() {
 
 function MailNotification({ subject, preview, time, className }: { subject: string; preview: string; time: ReactNode; className?: string }) {
   return (
-    <div className={cn("h-[5.5rem] rounded-[1.25rem] bg-white/14 px-3.5 py-3 text-white shadow-lg shadow-black/20 backdrop-blur-xl", className)}>
+    <div className={cn("h-[7.5rem] overflow-hidden rounded-[1.25rem] bg-white/14 px-3.5 py-3 text-white shadow-lg shadow-black/20 backdrop-blur-xl", className)}>
       <div className="flex items-center gap-2 text-[11px] text-white/70">
         <span className="flex size-5 items-center justify-center rounded-[5px] bg-sky-500 text-white">
           <Mail className="size-3" />
@@ -111,9 +111,9 @@ function MailNotification({ subject, preview, time, className }: { subject: stri
         <span className="font-medium tracking-wide uppercase">Mail</span>
         <span className="ml-auto">{time}</span>
       </div>
-      <div className="mt-1.5 truncate text-[13px] font-semibold">UptimeKit</div>
-      <div className="truncate text-[13px]">{subject}</div>
-      <div className="truncate text-[12px] text-white/60">{preview}</div>
+      <div className="mt-1.5 truncate text-[13px] leading-[1.35] font-semibold">UptimeKit</div>
+      <div className="line-clamp-2 text-[13px] leading-[1.3]">{subject}</div>
+      <div className="mt-0.5 truncate text-[12px] leading-[1.35] text-white/60">{preview}</div>
     </div>
   );
 }
@@ -123,18 +123,18 @@ export function NotificationStack({ className, cardClassName }: { className?: st
   const down = ramp(T.down);
   const rec = ramp(T.recovered);
   return (
-    <div className={cn("relative h-[11.75rem]", className)}>
+    <div className={cn("relative h-[15.5rem]", className)}>
       <div
         className="absolute inset-x-0 top-0"
         style={{
           opacity: down,
-          transform: `translateY(calc((1 - ${down}) * -18px + ${rec} * 6rem)) scale(calc(0.96 + 0.04 * ${down}))`,
+          transform: `translateY(calc((1 - ${down}) * -18px + ${rec} * 8rem)) scale(calc(0.96 + 0.04 * ${down}))`,
         }}
       >
         <MailNotification
           className={cardClassName}
           subject="[DOWN] Payments API is not responding"
-          preview="Reason: Unexpected HTTP status 503 (expected 200-299)"
+          preview="Reason: HTTP status 503"
           time={
             <Stack className="justify-items-end">
               <span style={{ opacity: `calc(1 - ${rec})` }}>now</span>
@@ -166,7 +166,7 @@ function LockScreenContent({ island = false }: { island?: boolean }) {
           <BatteryFull className="size-4" />
         </span>
       </div>
-      <div className="relative mt-8 text-center text-white">
+      <div className="relative mt-6 text-center text-white">
         <div className="text-[13px] font-medium text-white/75">Tuesday 18 November</div>
         <Stack className="justify-items-center">
           <span className="tabular text-[4.25rem] leading-none font-semibold tracking-tight" style={{ opacity: `calc(1 - ${ramp(T.clock)})` }}>
@@ -177,7 +177,7 @@ function LockScreenContent({ island = false }: { island?: boolean }) {
           </span>
         </Stack>
       </div>
-      <NotificationStack className="mx-3 mt-8" />
+      <NotificationStack className="mx-3 mt-6" />
     </>
   );
 }
