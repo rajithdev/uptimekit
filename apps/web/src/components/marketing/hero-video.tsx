@@ -3,17 +3,43 @@ import { useEffect, useRef, type ReactNode } from "react";
 
 const clamp = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
-/** An edge of a tracked rectangle, as a fraction of the frame: value at t = 0 and change per second. */
-type Edge = readonly [at0: number, perSecond: number];
+/** Quadratic in clip time t (seconds): a·t² + b·t + c, giving a fraction of the frame. */
+type Curve = readonly [a: number, b: number, c: number];
+type Corner = readonly [x: Curve, y: Curve];
 
-/** A rectangle that moves linearly through the clip (for example a phone screen during a push-in). */
-export interface TrackedRect {
-  x0: Edge;
-  y0: Edge;
-  x1: Edge;
-  y1: Edge;
-  /** Width in CSS px at which the overlay is laid out before being scaled onto the rectangle. */
+/**
+ * A four-cornered shape that moves through the clip, such as a phone screen seen in slight
+ * perspective during a push-in. Corners are top-left, top-right, bottom-right, bottom-left.
+ */
+export interface TrackedQuad {
+  tl: Corner;
+  tr: Corner;
+  br: Corner;
+  bl: Corner;
+  /** Size in CSS px at which the overlay is laid out before being warped onto the shape. */
   designWidth: number;
+  designHeight: number;
+  /** Grow the shape by this many px on every side so no light seam of the picture shows. */
+  bleed?: number;
+}
+
+const at = (c: Curve, t: number) => (c[0] * t + c[1]) * t + c[2];
+
+/**
+ * CSS matrix3d that maps the rectangle (0,0)–(w,h) onto the quad p0..p3 (TL, TR, BR, BL),
+ * via the standard square-to-quad projective mapping.
+ */
+function quadMatrix(w: number, h: number, p: [[number, number], [number, number], [number, number], [number, number]]) {
+  const [[x0, y0], [x1, y1], [x2, y2], [x3, y3]] = p;
+  const dx1 = x1 - x2, dx2 = x3 - x2, dx3 = x0 - x1 + x2 - x3;
+  const dy1 = y1 - y2, dy2 = y3 - y2, dy3 = y0 - y1 + y2 - y3;
+  const den = dx1 * dy2 - dx2 * dy1;
+  const g = (dx3 * dy2 - dx2 * dy3) / den;
+  const k = (dx1 * dy3 - dx3 * dy1) / den;
+  const a = x1 - x0 + g * x1, b = x3 - x0 + k * x3;
+  const d = y1 - y0 + g * y1, e = y3 - y0 + k * y3;
+  const m = [a / w, d / w, 0, g / w, b / h, e / h, 0, k / h, 0, 0, 1, 0, x0, y0, 0, 1];
+  return `matrix3d(${m.map((v) => +v.toFixed(8)).join(",")})`;
 }
 
 /**
@@ -25,11 +51,10 @@ export interface TrackedRect {
  * - With reduced motion it shows the last frame, matching the hero's finished state.
  * - The box always covers its parent at 16:9, so `children` positioned in % of the box stay
  *   locked to the same spot in the picture at any viewport size.
- * - With `track`, it also writes the rectangle's position at the current time onto the box
- *   (--sx0, --sy0, --sx1, --sy1 as fractions; --ss, the scale from `designWidth`; --ih, the
- *   unscaled height in px) so an overlay can sit exactly on it.
+ * - With `track`, it writes `--quad` on the box: a matrix3d that warps an element laid out at
+ *   designWidth × designHeight (origin top-left) onto the tracked shape in the frame on screen.
  */
-export function HeroVideo({ src, poster, track, children }: { src: string; poster: string; track?: TrackedRect; children?: ReactNode }) {
+export function HeroVideo({ src, poster, track, children }: { src: string; poster: string; track?: TrackedQuad; children?: ReactNode }) {
   const ref = useRef<HTMLVideoElement>(null);
   const boxRef = useRef<HTMLDivElement>(null);
 
@@ -41,15 +66,19 @@ export function HeroVideo({ src, poster, track, children }: { src: string; poste
 
     const place = (t: number) => {
       if (!track) return;
-      const at = (e: Edge) => e[0] + e[1] * t;
-      const [x0, y0, x1, y1] = [at(track.x0), at(track.y0), at(track.x1), at(track.y1)];
-      const scale = (box.clientWidth * (x1 - x0)) / track.designWidth;
-      box.style.setProperty("--sx0", x0.toFixed(5));
-      box.style.setProperty("--sy0", y0.toFixed(5));
-      box.style.setProperty("--sx1", x1.toFixed(5));
-      box.style.setProperty("--sy1", y1.toFixed(5));
-      box.style.setProperty("--ss", scale.toFixed(5));
-      box.style.setProperty("--ih", `${((box.clientHeight * (y1 - y0)) / scale).toFixed(2)}px`);
+      const W = box.clientWidth, H = box.clientHeight;
+      const corner = ([x, y]: Corner): [number, number] => [at(x, t) * W, at(y, t) * H];
+      const pts: [[number, number], [number, number], [number, number], [number, number]] = [corner(track.tl), corner(track.tr), corner(track.br), corner(track.bl)];
+      const bleed = track.bleed ?? 0;
+      if (bleed) {
+        const cx = pts.reduce((s, p) => s + p[0], 0) / 4, cy = pts.reduce((s, p) => s + p[1], 0) / 4;
+        for (const p of pts) {
+          const len = Math.hypot(p[0] - cx, p[1] - cy) || 1;
+          p[0] += ((p[0] - cx) / len) * bleed * Math.SQRT2;
+          p[1] += ((p[1] - cy) / len) * bleed * Math.SQRT2;
+        }
+      }
+      box.style.setProperty("--quad", quadMatrix(track.designWidth, track.designHeight, pts));
     };
 
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -69,19 +98,23 @@ export function HeroVideo({ src, poster, track, children }: { src: string; poste
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(seek);
     };
+    const onResize = () => {
+      place(video.currentTime);
+      schedule();
+    };
 
     video.src = src;
     place(0);
     video.addEventListener("loadedmetadata", seek);
     video.addEventListener("seeked", onSeeked);
     window.addEventListener("scroll", schedule, { passive: true });
-    window.addEventListener("resize", schedule);
+    window.addEventListener("resize", onResize);
     return () => {
       cancelAnimationFrame(frame);
       video.removeEventListener("loadedmetadata", seek);
       video.removeEventListener("seeked", onSeeked);
       window.removeEventListener("scroll", schedule);
-      window.removeEventListener("resize", schedule);
+      window.removeEventListener("resize", onResize);
     };
   }, [src, track]);
 

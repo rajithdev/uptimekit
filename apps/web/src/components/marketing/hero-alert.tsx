@@ -121,14 +121,17 @@ function MailNotification({ subject, preview, time, className }: { subject: stri
 /** The DOWN email arrives, then the RECOVERED email lands on top and pushes it down. */
 export function NotificationStack({ className, cardClassName }: { className?: string; cardClassName?: string }) {
   const down = ramp(T.down);
-  const rec = ramp(T.recovered);
+  // Recovery in two beats so the cards never overlap: the DOWN email slides down first, then the
+  // RECOVERED email fades in above it.
+  const shift = ramp(T.recovered - 0.02, 14);
+  const rec = ramp(T.recovered + 0.04, 14);
   return (
     <div className={cn("relative h-[15.5rem]", className)}>
       <div
         className="absolute inset-x-0 top-0"
         style={{
           opacity: down,
-          transform: `translateY(calc((1 - ${down}) * -18px + ${rec} * 8rem)) scale(calc(0.96 + 0.04 * ${down}))`,
+          transform: `translateY(calc((1 - ${down}) * -18px + ${shift} * 8rem)) scale(calc(0.96 + 0.04 * ${down}))`,
         }}
       >
         <MailNotification
@@ -137,8 +140,8 @@ export function NotificationStack({ className, cardClassName }: { className?: st
           preview="Reason: HTTP status 503"
           time={
             <Stack className="justify-items-end">
-              <span style={{ opacity: `calc(1 - ${rec})` }}>now</span>
-              <span style={{ opacity: rec }}>11m ago</span>
+              <span style={{ opacity: `calc(1 - ${ramp(T.clock)})` }}>now</span>
+              <span style={{ opacity: ramp(T.clock) }}>11m ago</span>
             </Stack>
           }
         />
@@ -182,37 +185,31 @@ function LockScreenContent({ island = false }: { island?: boolean }) {
   );
 }
 
-/** Width, in CSS px, at which the video lock screen is laid out before being scaled onto the screen. */
-export const VIDEO_SCREEN_DESIGN_WIDTH = 270;
+/** Size, in CSS px, at which the video lock screen is laid out before being warped onto the screen. */
+export const VIDEO_SCREEN_DESIGN = { width: 270, height: 535 } as const;
 
 /**
- * The lock screen drawn onto the phone screen in the hero video. HeroVideo tracks the screen and
- * writes its rectangle (--sx0/--sy0/--sx1/--sy1, fractions of the frame), the scale (--ss) and the
- * unscaled height (--ih). It appears when the screen wakes; while the screen glows red the video
- * shows through as the wallpaper, and as the video's screen turns white a dark wallpaper fades in
- * so the text stays readable.
+ * The lock screen drawn onto the phone screen in the hero video. HeroVideo tracks the screen's
+ * four corners and writes --quad, a matrix3d that warps this 270×535 layout onto the screen in the
+ * frame on display (the phone is filmed in slight perspective, so the screen is not a rectangle).
+ * It appears when the screen wakes; while the screen glows red the video shows through as the
+ * wallpaper, and as the video's screen turns white a dark wallpaper fades in so the text stays
+ * readable.
  */
 export function VideoLockScreen() {
   return (
     <div
-      className="absolute overflow-hidden"
+      className="absolute top-0 left-0 origin-top-left overflow-hidden rounded-[20px]"
       style={{
-        left: "calc(var(--sx0, 0) * 100%)",
-        top: "calc(var(--sy0, 0) * 100%)",
-        width: "calc((var(--sx1, 0) - var(--sx0, 0)) * 100%)",
-        height: "calc((var(--sy1, 0) - var(--sy0, 0)) * 100%)",
-        borderRadius: "calc(var(--ss, 1) * 24px)",
+        width: VIDEO_SCREEN_DESIGN.width,
+        height: VIDEO_SCREEN_DESIGN.height,
+        transform: "var(--quad, scale(0))",
         opacity: ramp(T.down - 0.04, 10),
       }}
     >
-      <div
-        className="relative origin-top-left"
-        style={{ width: VIDEO_SCREEN_DESIGN_WIDTH, height: "var(--ih, 500px)", transform: "scale(var(--ss, 1))" }}
-      >
-        <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-black/25 to-transparent" />
-        <div aria-hidden className="absolute inset-0 bg-[#0e0f13]" style={{ opacity: `calc(${ramp(0.6, 7)} * 0.94)` }} />
-        <LockScreenContent />
-      </div>
+      <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-black/25 to-transparent" />
+      <div aria-hidden className="absolute inset-0 bg-[#0e0f13]" style={{ opacity: `calc(${ramp(0.63, 11)} * 0.94)` }} />
+      <LockScreenContent />
     </div>
   );
 }

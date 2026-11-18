@@ -3,8 +3,8 @@ import type { CSSProperties } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/app/logo";
 import { ThemeToggle } from "@/components/app/theme-toggle";
-import { HeroAlertStage, MonitorCard, VIDEO_SCREEN_DESIGN_WIDTH, VideoLockScreen } from "@/components/marketing/hero-alert";
-import { HeroVideo, type TrackedRect } from "@/components/marketing/hero-video";
+import { HeroAlertStage, MonitorCard, VIDEO_SCREEN_DESIGN, VideoLockScreen } from "@/components/marketing/hero-alert";
+import { HeroVideo, type TrackedQuad } from "@/components/marketing/hero-video";
 import { HeroPanel } from "@/components/marketing/hero-panel";
 import { HowItWorks, SectionIntro } from "@/components/marketing/how-it-works";
 import { ScrollScene } from "@/components/marketing/scroll-scene";
@@ -18,16 +18,19 @@ export const dynamic = "force-dynamic";
 const GITHUB_URL = "https://github.com/rajithdev/uptimekit";
 
 /**
- * The phone screen in /hero/night-desk.mp4 (Higgsfield Seedance 2.5, 10 s, 1920×1080), measured
- * from the clip's white-screen frames: each edge moves linearly during the push-in (fit error
- * under 0.3% of the frame). Values are fractions of the frame at t = 0 s and change per second.
+ * The phone screen in /hero/night-desk.mp4 (Higgsfield Seedance 2.5, 10 s, 1920×1080). The phone
+ * is filmed in slight perspective, so each of the screen's four corners was measured in every lit
+ * frame (edge lines fitted to the screen's sides, intersected) and fitted with a quadratic in time;
+ * the fit stays within 1.7 px of the measurements. Values are fractions of the frame.
  */
-const PHONE_SCREEN: TrackedRect = {
-  x0: [0.5564, 0.00154],
-  y0: [0.2214, -0.00874],
-  x1: [0.7133, 0.00644],
-  y1: [0.7309, 0.00809],
-  designWidth: VIDEO_SCREEN_DESIGN_WIDTH,
+const PHONE_SCREEN: TrackedQuad = {
+  tl: [[-8.3e-6, 0.0018832, 0.5624608], [-6.1e-5, -0.0074616, 0.2163177]],
+  tr: [[1.74e-5, 0.0056047, 0.7053332], [-5.31e-5, -0.0076202, 0.2152148]],
+  br: [[2.91e-5, 0.0058299, 0.7193202], [1.082e-4, 0.0061376, 0.7409605]],
+  bl: [[3.85e-5, 0.0014077, 0.5623108], [1.327e-4, 0.0057313, 0.7418345]],
+  designWidth: VIDEO_SCREEN_DESIGN.width,
+  designHeight: VIDEO_SCREEN_DESIGN.height,
+  bleed: 1.5,
 };
 
 const PIPELINE = [
