@@ -170,7 +170,7 @@ function LockScreenContent({ island = false }: { island?: boolean }) {
         </span>
       </div>
       <div className="relative mt-6 text-center text-white">
-        <div className="text-[13px] font-medium text-white/75">Tuesday 18 November</div>
+        <div className="text-[13px] font-medium text-white/75">Wednesday 18 November</div>
         <Stack className="justify-items-center">
           <span className="tabular text-[4.25rem] leading-none font-semibold tracking-tight" style={{ opacity: `calc(1 - ${ramp(T.clock)})` }}>
             9:41
