@@ -58,7 +58,7 @@ export function DashboardView() {
         />
       ) : (
         <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5 max-md:[&>*:last-child]:col-span-2">
             <StatCard label="Monitors" icon={<Activity />} loading={!s} value={s?.totals.monitors} hint={s && `${s.totals.paused} paused · ${s.totals.pending + s.totals.unknown} pending`} />
             <StatCard label="Operational" icon={<CheckCircle2 />} loading={!s} value={s?.totals.up} valueClassName="text-success" />
             <StatCard label="Down" icon={<AlertTriangle />} loading={!s} value={s?.totals.down} valueClassName={s && s.totals.down > 0 ? "text-destructive" : undefined} hint={s && `${s.openIncidents} open incident${s.openIncidents === 1 ? "" : "s"}`} />

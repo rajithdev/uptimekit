@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
@@ -45,26 +44,25 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
 
   const isLogin = mode === "login";
   return (
-    <Card className="shadow-none">
-      <CardHeader>
-        <CardTitle className="text-xl">{isLogin ? "Welcome back" : "Create your account"}</CardTitle>
-        <CardDescription>{isLogin ? "Sign in to your monitoring dashboard." : "Start monitoring your sites and APIs in minutes."}</CardDescription>
-      </CardHeader>
-      <CardContent>
+    <div>
+      <h1 className="text-3xl font-semibold tracking-[-0.03em]">{isLogin ? "Welcome back" : "Create your account"}</h1>
+      <p className="mt-2 text-muted-foreground">{isLogin ? "Sign in to your monitoring dashboard." : "Start monitoring your sites and APIs in minutes."}</p>
+      <div className="mt-8">
         <form onSubmit={onSubmit} className="space-y-4" noValidate={false}>
           {!isLogin && (
             <div className="space-y-2">
               <Label htmlFor="name">Name</Label>
-              <Input id="name" name="name" autoComplete="name" maxLength={100} placeholder="Ada Lovelace" />
+              <Input id="name" name="name" className="h-10" autoComplete="name" maxLength={100} placeholder="Ada Lovelace" />
             </div>
           )}
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" name="email" type="email" autoComplete="email" required placeholder="you@company.com" />
+            <Input id="email" name="email" className="h-10" type="email" autoComplete="email" required placeholder="you@company.com" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <Input
+              className="h-10"
               id="password"
               name="password"
               type="password"
@@ -80,18 +78,18 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
               {error}
             </p>
           )}
-          <Button type="submit" className="w-full" disabled={pending}>
+          <Button type="submit" size="lg" className="h-11 w-full text-[15px]" disabled={pending}>
             {pending && <Loader2 className="size-4 animate-spin" />}
             {isLogin ? "Sign in" : "Create account"}
           </Button>
         </form>
-        <p className="mt-6 text-center text-sm text-muted-foreground">
+        <p className="mt-6 text-sm text-muted-foreground">
           {isLogin ? "New to UptimeKit? " : "Already have an account? "}
           <Link href={isLogin ? "/register" : "/login"} className="font-medium text-foreground underline-offset-4 hover:underline">
             {isLogin ? "Create an account" : "Sign in"}
           </Link>
         </p>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

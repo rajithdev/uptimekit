@@ -24,7 +24,7 @@ export function DemoDashboard({ data }: { data: DemoDataset }) {
         }
       />
       <div className="space-y-6">
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5 max-md:[&>*:last-child]:col-span-2">
           <StatCard label="Monitors" icon={<Activity />} value={s.totals.monitors} hint={`${s.totals.paused} paused`} />
           <StatCard label="Operational" icon={<CheckCircle2 />} value={s.totals.up} valueClassName="text-success" hint={`${degraded} degraded`} />
           <StatCard label="Down" icon={<AlertTriangle />} value={s.totals.down} valueClassName={s.totals.down ? "text-destructive" : undefined} hint={`${s.openIncidents} open incident${s.openIncidents === 1 ? "" : "s"}`} />

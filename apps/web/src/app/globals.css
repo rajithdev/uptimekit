@@ -5,7 +5,9 @@
 
 /*
  * UptimeKit design tokens.
- * Dark (default): deep charcoal surfaces, hairline borders, restrained status colours.
+ * Dark (default): near-black surfaces, hairline borders, restrained status colours.
+ * One brand accent, --signal (orange), marks the live signal: focus rings, step numbers,
+ * the "live" dot. Status colours (success/warning/destructive) stay semantic and separate.
  */
 :root {
   --radius: 0.625rem;
@@ -26,7 +28,8 @@
   --destructive: oklch(0.58 0.22 25);
   --border: oklch(0.91 0.004 270);
   --input: oklch(0.91 0.004 270);
-  --ring: oklch(0.65 0.01 270);
+  --ring: oklch(0.64 0.19 42);
+  --signal: oklch(0.64 0.19 42);
 
   --success: oklch(0.62 0.15 155);
   --warning: oklch(0.75 0.15 75);
@@ -50,9 +53,9 @@
 }
 
 .dark {
-  --background: oklch(0.155 0.004 270);
-  --foreground: oklch(0.95 0.003 270);
-  --card: oklch(0.185 0.005 270);
+  --background: oklch(0.145 0.004 270);
+  --foreground: oklch(0.96 0.003 270);
+  --card: oklch(0.18 0.005 270);
   --card-foreground: oklch(0.95 0.003 270);
   --popover: oklch(0.2 0.005 270);
   --popover-foreground: oklch(0.95 0.003 270);
@@ -67,7 +70,8 @@
   --destructive: oklch(0.65 0.2 25);
   --border: oklch(1 0 0 / 8%);
   --input: oklch(1 0 0 / 11%);
-  --ring: oklch(0.55 0.01 270);
+  --ring: oklch(0.72 0.17 48);
+  --signal: oklch(0.72 0.17 48);
 
   --success: oklch(0.72 0.16 155);
   --warning: oklch(0.8 0.14 75);
@@ -111,6 +115,7 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-signal: var(--signal);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-info: var(--info);
@@ -144,5 +149,72 @@
   }
   .tabular {
     font-variant-numeric: tabular-nums;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--signal) 35%, transparent);
+  }
+}
+
+/*
+ * Scroll-driven animation primitives (landing page).
+ * A <ScrollScene> ancestor writes progress --p (0..1). Each element picks its own start (--at)
+ * and speed (--k); --sx-t is its local 0..1 amount. Without JS, or with reduced motion, --p falls
+ * back to 1 and everything shows its finished state.
+ */
+@layer components {
+  .sx-fade,
+  .sx-wipe,
+  .sx-grow-y,
+  .sx-show {
+    --sx-t: clamp(0, calc((var(--p, 1) - var(--at, 0)) * var(--k, 6)), 1);
+  }
+  .sx-fade {
+    opacity: var(--sx-t);
+    transform: translateY(calc((1 - var(--sx-t)) * 10px));
+  }
+  .sx-show {
+    opacity: var(--sx-t);
+  }
+  .sx-wipe {
+    clip-path: inset(0 calc((1 - var(--sx-t)) * 100%) 0 0);
+  }
+  .sx-grow-y {
+    transform-origin: top;
+    transform: scaleY(var(--sx-t));
+  }
+
+  /* Pinned "how it works" story: step i reads --p{i} / --a{i} through inline styles. */
+  .sx-step-panel {
+    opacity: var(--a, 1);
+    transform: translateY(calc((1 - var(--a, 1)) * 14px));
+    pointer-events: none;
+  }
+  .sx-step-label {
+    opacity: calc(0.38 + 0.62 * var(--a, 1));
+  }
+
+  @media (min-width: 64rem) {
+    /* Dashboard panel: leans back as it enters and settles flat. */
+    .sx-tilt {
+      --sx-h: min(calc(var(--p, 1) * 1.6), 1);
+      transform-origin: 50% 100%;
+      transform: perspective(1800px) rotateX(calc((1 - var(--sx-h)) * 14deg)) scale(calc(0.95 + var(--sx-h) * 0.05));
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sx-fade,
+    .sx-show,
+    .sx-wipe,
+    .sx-grow-y,
+    .sx-tilt {
+      opacity: 1;
+      transform: none;
+      clip-path: none;
+    }
+    /* The hero's inline --p:0 (its first frame) gives way to the finished story. */
+    .sx-hero {
+      --p: 1 !important;
+    }
   }
 }
